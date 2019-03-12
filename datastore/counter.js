@@ -38,12 +38,21 @@ const writeCounter = (count, callback) => {
 
 // Public API - Fix this function //////////////////////////////////////////////
 
-exports.getNextUniqueId = () => {
-  counter = counter + 1;
-  return zeroPaddedNumber(counter);
+exports.getNextUniqueId = (cb) => {
+  //use readCounter function to get the last assign id
+  //after reading id, use the writeCounter to write the next id
+  //writeCounter will be adding 1
+  
+  readCounter((err, count) => {
+    writeCounter(count + 1, (err, id) => {
+      cb(null, id);
+    });
+  });
 };
 
 
+// counter = counter + 1;
+// return zeroPaddedNumber(counter);
 
 // Configuration -- DO NOT MODIFY //////////////////////////////////////////////
 
