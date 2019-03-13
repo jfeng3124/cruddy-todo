@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const _ = require('underscore');
 const counter = require('./counter');
+const Promise = require('bluebird');
+const readFileAsync = Promise.promisify(fs.readFile);
 
 var items = {};
 
@@ -10,7 +12,6 @@ var items = {};
 exports.create = (text, callback) => {
   counter.getNextUniqueId((err, id) => {
     items[id] = text;
-    console.log(items);
     var filePath = path.join(exports.dataDir, `${id}.txt`);
     fs.writeFile(filePath, text, (err) => {
       if (err) {
@@ -23,19 +24,37 @@ exports.create = (text, callback) => {
 };
 
 exports.readAll = (callback) => {
-  var data = [];
   fs.readdir(exports.dataDir, (err, files) => {
     if (err) {
       throw ('files not found');
     } else {
-      _.each(files, (file) => {
-        file = file.slice(0, 5);
-        data.push({id: file, text: file});
+      var data = _.map(files, (file) => {
+        var id = path.basename(file, '.txt');
+        var filePath = path.join(exports.dataDir, file);
+        return readFileAsync(filePath).then (fileData => {
+          return {
+            id: id,
+            text: fileData.toString()
+          };
+        }); 
       });
-      callback(null, data);
+      Promise.all(data).then(items => callback(null, items));
     }
   });
 };
+
+// _.each(files, (file) => {
+//   file = file.slice(0, 5);
+//   data.push({id: file, text});
+// });
+// callback(null, data);
+  
+
+//promise all only takes in an array
+//we are interating through each file with readFile
+//use promise with read file and then return the object set to the id and the text
+
+
 
 exports.readOne = (id, callback) => {
   var filePath = path.join(exports.dataDir, `${id}.txt`);
